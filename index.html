@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Administration — Lima's Hair</title>
+<style>
+  :root{
+    --ink:#1b2430; --paper:#f6f5f1; --line:#d8d5cb;
+    --accent:#2f6f5e; --accent-dark:#234f42;
+    --red:#b3423c; --red-dark:#8f342f; --amber:#a5751f;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--paper);color:var(--ink);padding:40px 20px 80px;}
+  .wrap{max-width:760px;margin:0 auto;}
+  h1{font-size:1.5rem;margin:0 0 4px;}
+  p.sub{margin:0 0 28px;color:#5b6470;font-size:.92rem;}
+  #liste{display:flex;flex-direction:column;gap:14px;}
+  .carte{background:#fff;border:1px solid var(--line);border-left:4px solid var(--amber);border-radius:9px;padding:18px 20px;}
+  .carte.accepte{border-left-color:var(--accent);}
+  .carte.refuse{border-left-color:var(--red); opacity:.7;}
+  .ligne-titre{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;}
+  .ligne-titre h2{font-size:1.05rem;margin:0;}
+  .statut{font-size:.78rem;font-weight:600;color:var(--amber);}
+  .carte.accepte .statut{color:var(--accent);}
+  .carte.refuse .statut{color:var(--red);}
+  .details{margin-top:10px;font-size:.88rem;color:#3d4652;display:grid;grid-template-columns:1fr 1fr;gap:4px 18px;}
+  .details div span{color:#8b93a0;}
+  .commentaire{margin-top:10px;font-size:.86rem;color:#3d4652;background:#f8f7f4;border:1px solid var(--line);border-radius:6px;padding:8px 10px;}
+  .actions{margin-top:14px;display:flex;gap:10px;}
+  .actions button{flex:1;padding:9px;border:none;border-radius:6px;font-size:.85rem;font-weight:600;cursor:pointer;color:#fff;}
+  .btn-accepte{background:var(--accent);}
+  .btn-accepte:hover{background:var(--accent-dark);}
+  .btn-refuse{background:var(--red);}
+  .btn-refuse:hover{background:var(--red-dark);}
+  .actions button:disabled{background:#cfd3d8;cursor:not-allowed;}
+  #vide{text-align:center;color:#8b93a0;padding:60px 0;font-size:.92rem;}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <h1>Réservations — Lima's Hair</h1>
+  <p class="sub">Acceptez ou refusez une réservation : le client sera contacté directement sur WhatsApp.</p>
+  <div id="liste"></div>
+  <div id="vide" style="display:none;">Aucune réservation pour le moment.</div>
+</div>
+
+<script>
+const cle = 'reservations';
+
+function getReservations(){ return JSON.parse(localStorage.getItem(cle) || '[]'); }
+function saveReservations(l){ localStorage.setItem(cle, JSON.stringify(l)); }
+
+// Met le numéro au format international attendu par WhatsApp (wa.me)
+function formatNumero(tel){
+  let n = tel.replace(/\D/g, '');
+  if (!n.startsWith('225')) n = '225' + n.replace(/^0+/, '');
+  return n;
+}
+
+function ouvrirWhatsapp(r, message){
+  const numero = formatNumero(r.whatsapp || r.telephone);
+  window.open('https://wa.me/' + numero + '?text=' + encodeURIComponent(message), '_blank');
+}
+
+function accepter(id){
+  const reservations = getReservations();
+  const r = reservations.find(x => x.id === id);
+  if (!r) return;
+  r.statut = 'accepté';
+  saveReservations(reservations);
+  ouvrirWhatsapp(r, `Bonjour ${r.nom}, votre réservation "${r.service}" du ${r.date} à ${r.heure} est acceptée chez Lima's Hair. À bientôt !`);
+  afficherReservations();
+}
+
+function refuser(id){
+  const reservations = getReservations();
+  const r = reservations.find(x => x.id === id);
+  if (!r) return;
+  r.statut = 'refusé';
+  saveReservations(reservations);
+  ouvrirWhatsapp(r, `Bonjour ${r.nom}, nous sommes désolés, votre réservation "${r.service}" du ${r.date} à ${r.heure} ne peut pas être maintenue.`);
+  afficherReservations();
+}
+
+function afficherReservations(){
+  const reservations = getReservations().sort((a, b) => new Date(b.dateCreation) - new Date(a.dateCreation));
+  const liste = document.getElementById('liste');
+  const vide = document.getElementById('vide');
+  liste.innerHTML = '';
+
+  if (reservations.length === 0){ vide.style.display = 'block'; return; }
+  vide.style.display = 'none';
+
+  reservations.forEach(r => {
+    const carte = document.createElement('div');
+    carte.className = 'carte ' + (r.statut === 'accepté' ? 'accepte' : r.statut === 'refusé' ? 'refuse' : '');
+    carte.innerHTML = `
+      <div class="ligne-titre">
+        <h2>${r.service}</h2>
+        <span class="statut">${r.statut}</span>
+      </div>
+      <div class="details">
+        <div><span>Date : </span>${r.date}</div>
+        <div><span>Heure : </span>${r.heure}</div>
+        <div><span>Client : </span>${r.nom}</div>
+        <div><span>Téléphone : </span>${r.telephone}</div>
+        ${r.whatsapp && r.whatsapp !== r.telephone ? `<div><span>WhatsApp : </span>${r.whatsapp}</div>` : ''}
+        ${r.email ? `<div><span>Email : </span>${r.email}</div>` : ''}
+      </div>
+      ${r.commentaire ? `<div class="commentaire">${r.commentaire}</div>` : ''}
+      <div class="actions">
+        <button class="btn-accepte" ${r.statut !== 'en attente' ? 'disabled' : ''} onclick="accepter('${r.id}')">Accepté</button>
+        <button class="btn-refuse" ${r.statut !== 'en attente' ? 'disabled' : ''} onclick="refuser('${r.id}')">Refusé</button>
+      </div>
+    `;
+    liste.appendChild(carte);
+  });
+}
+
+afficherReservations();
+</script>
+
+</body>
+</html>
