@@ -1,0 +1,401 @@
+/* ============================================================
+   admin-style.css — Lima's Hair · Administration
+   Approche MOBILE-FIRST : styles de base = petit écran,
+   on ajoute des overrides pour les grands écrans ensuite.
+   ============================================================ */
+
+/* ── Variables (identiques au site principal) ── */
+:root {
+  --bg:          #0d0d0d;
+  --surface:     #161616;
+  --surface-2:   #1e1e1e;
+  --border:      #262626;
+  --gold:        #d4a373;
+  --gold-hover:  #c39262;
+  --text:        #ffffff;
+  --muted:       #9e9e9e;
+
+  --green:       #2f6f5e;
+  --green-hi:    #3a8a74;
+  --green-bg:    rgba(47,111,94,0.15);
+  --red:         #9b3a35;
+  --red-hi:      #b94540;
+  --red-bg:      rgba(155,58,53,0.15);
+  --amber:       #a5751f;
+  --amber-hi:    #c48f2a;
+  --amber-bg:    rgba(165,117,31,0.13);
+
+  --wa:          #25d366;
+  --serif:       'Playfair Display', Georgia, serif;
+  --sans:        'Poppins', sans-serif;
+  --r:           12px;
+  --r-sm:        8px;
+}
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ============================================================
+   HEADER — mobile-first
+   Sur mobile  : 2 rangées (logo|badge / stats)
+   Sur desktop : 1 rangée (logo|badge ——— stats)
+   ============================================================ */
+.admin-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(13,13,13,0.96);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+}
+
+.admin-header-inner {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 14px 16px;
+
+  /* Mobile : colonne — logo dessus, stats dessous */
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Ligne 1 : logo + badge ADMINISTRATION */
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-logo {
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--gold);
+  white-space: nowrap;
+}
+
+.header-badge {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  padding: 3px 9px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+/* Ligne 2 : compteurs de statut */
+.header-stats {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: nowrap; /* jamais de retour à la ligne */
+}
+
+.stat-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 20px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+.stat-pill i { font-size: 0.68rem; }
+
+.stat-pending  { color: var(--amber-hi); border-color: var(--amber); background: var(--amber-bg); }
+.stat-accepted { color: #4dbb9a;         border-color: var(--green); background: var(--green-bg); }
+.stat-refused  { color: #e06060;         border-color: var(--red);   background: var(--red-bg); }
+
+/* Desktop : une seule rangée */
+@media (min-width: 540px) {
+  .admin-header-inner {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+  }
+  .header-logo { font-size: 1.45rem; }
+}
+
+/* ============================================================
+   CONTENU PRINCIPAL
+   ============================================================ */
+.admin-main {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 22px 16px 80px;
+}
+
+@media (min-width: 540px) {
+  .admin-main { padding: 28px 24px 80px; }
+}
+
+/* Sous-titre */
+.admin-subtitle {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.5;
+  margin-bottom: 22px;
+}
+.admin-subtitle i { color: var(--wa); font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+
+/* ============================================================
+   BARRE DE FILTRES — scroll horizontal sur mobile
+   ============================================================ */
+.filter-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 22px;
+
+  /* Mobile : scroll horizontal, pas de retour à la ligne */
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+.filter-bar::-webkit-scrollbar { display: none; }
+
+.filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 13px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0; /* ne jamais rétrécir */
+}
+
+.filter-btn:hover  { border-color: var(--gold); color: var(--gold); }
+.filter-btn.active { background: var(--gold); border-color: var(--gold); color: #000; font-weight: 600; }
+
+.filter-count {
+  background: rgba(0,0,0,0.2);
+  border-radius: 10px;
+  padding: 1px 6px;
+  font-size: 0.7rem;
+}
+
+/* ============================================================
+   LISTE
+   ============================================================ */
+#liste {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ============================================================
+   CARTE DE RÉSERVATION
+   ============================================================ */
+.carte {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--amber);
+  border-radius: var(--r);
+  padding: 16px;
+  transition: box-shadow 0.2s;
+}
+
+@media (min-width: 540px) {
+  .carte { padding: 20px 22px; }
+}
+
+.carte:hover { box-shadow: 0 4px 24px rgba(0,0,0,0.4); }
+
+.carte.accepte {
+  border-left-color: var(--green);
+  background: linear-gradient(135deg, var(--surface) 80%, rgba(47,111,94,0.06) 100%);
+}
+.carte.refuse {
+  border-left-color: var(--red);
+  opacity: 0.72;
+  background: linear-gradient(135deg, var(--surface) 80%, rgba(155,58,53,0.06) 100%);
+}
+
+/* En-tête de carte */
+.carte-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.carte-titre {
+  font-family: var(--serif);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+  /* Empêche le titre de pousser le badge hors de l'écran */
+  min-width: 0;
+  flex: 1;
+}
+
+@media (min-width: 540px) {
+  .carte-titre { font-size: 1.1rem; }
+}
+
+/* Badge statut */
+.badge-statut {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  padding: 4px 9px;
+  border-radius: 20px;
+  border: 1px solid;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.badge-attente { color: var(--amber-hi); border-color: var(--amber); background: var(--amber-bg); }
+.badge-accepte { color: #4dbb9a;         border-color: var(--green); background: var(--green-bg); }
+.badge-refuse  { color: #e06060;         border-color: var(--red);   background: var(--red-bg); }
+
+/* Grille d'infos
+   Mobile  : 1 colonne
+   ≥ 420px : 2 colonnes
+*/
+.carte-infos {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+@media (min-width: 420px) {
+  .carte-infos {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 20px;
+  }
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0; /* évite le débordement de texte long */
+}
+
+.info-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.info-value {
+  font-size: 0.86rem;
+  color: var(--text);
+  word-break: break-word; /* coupe les longs numéros */
+}
+
+.info-value.gold { color: var(--gold); font-weight: 500; }
+
+/* Commentaire */
+.carte-commentaire {
+  font-size: 0.82rem;
+  color: var(--muted);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  line-height: 1.5;
+  font-style: italic;
+}
+.carte-commentaire::before { content: '" '; color: var(--gold); font-style: normal; font-weight: 700; }
+
+/* ── Boutons d'action ──
+   Mobile  : empilés (colonne)
+   ≥ 400px : côte à côte (ligne)
+*/
+.carte-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+@media (min-width: 400px) {
+  .carte-actions { flex-direction: row; }
+}
+
+.btn-action {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 13px 16px;
+  border: none;
+  border-radius: var(--r-sm);
+  font-family: var(--sans);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-height: 48px; /* confort tactile */
+  width: 100%;
+}
+
+.btn-accepter { background: var(--green); color: #fff; }
+.btn-accepter:hover:not(:disabled) { background: var(--green-hi); transform: translateY(-1px); }
+
+.btn-refuser { background: transparent; color: #e06060; border: 1px solid var(--red); }
+.btn-refuser:hover:not(:disabled) { background: var(--red-bg); transform: translateY(-1px); }
+
+.btn-action:disabled { opacity: 0.32; cursor: not-allowed; transform: none; }
+
+/* ============================================================
+   ÉTAT VIDE
+   ============================================================ */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--muted);
+}
+.empty-state i { font-size: 2.6rem; color: var(--border); margin-bottom: 14px; display: block; }
+.empty-state p { font-family: var(--serif); font-size: 1.05rem; color: var(--muted); margin-bottom: 8px; }
+.empty-state span {
+  font-size: 0.8rem;
+  color: #555;
+  display: block;
+  max-width: 320px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
