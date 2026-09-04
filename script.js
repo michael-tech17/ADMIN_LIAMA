@@ -1,62 +1,38 @@
-/* ============================================================
-   admin-script.js — Lima's Hair · Administration
-   ============================================================
+// ============================================================
+// Firebase — initialisation
+// ============================================================
+import { initializeApp }                                        from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+import { getFirestore, collection, doc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 
-   POURQUOI LES RÉSERVATIONS ARRIVENT-ELLES ICI ?
-   ──────────────────────────────────────────────
-   Le site principal (script.js) sauvegarde chaque réservation
-   dans le localStorage sous la clé "reservations".
-   Cette page admin lit ce même localStorage, donc elle
-   fonctionne uniquement si le gérant ouvre cette page
-   sur LE MÊME appareil et navigateur que celui utilisé
-   par les clients, OU si les réservations lui sont
-   transmises via le lien WhatsApp (voir script.js principal).
+const firebaseConfig = {
+  apiKey:            "AIzaSyD7N4c-eag20zZK4prNZVv4Hcg5J6iNMe0",
+  authDomain:        "liama-s-hair.firebaseapp.com",
+  projectId:         "liama-s-hair",
+  storageBucket:     "liama-s-hair.firebasestorage.app",
+  messagingSenderId: "608235589082",
+  appId:             "1:608235589082:web:510273d886fb5e5d0184e3"
+};
 
-   SOLUTION MISE EN PLACE :
-   Quand un client valide sa réservation, le message WhatsApp
-   envoyé au salon contient toutes les données. Le gérant
-   peut aussi importer manuellement une réservation via
-   l'URL d'import (fonctionnalité prévue en extension).
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
 
-   ============================================================ */
-
-/* ── Clé localStorage — doit être identique à celle du site ── */
-const CLE = 'reservations';
-
-/* ── Filtre actif ── */
+// ============================================================
+// FILTRE ACTIF
+// ============================================================
 let filtreActif = 'all';
 
-/* ============================================================
-   STOCKAGE
-   ============================================================ */
+// ============================================================
+// UTILITAIRES
+// ============================================================
 
-/** Récupère toutes les réservations */
-function getReservations() {
-  return JSON.parse(localStorage.getItem(CLE) || '[]');
-}
-
-/** Sauvegarde la liste des réservations */
-function saveReservations(liste) {
-  localStorage.setItem(CLE, JSON.stringify(liste));
-}
-
-/* ============================================================
-   UTILITAIRES
-   ============================================================ */
-
-/**
- * Met un numéro au format international WhatsApp (225XXXXXXXX).
- * Ajoute le préfixe ivoirien si absent.
- */
+/** Met un numéro au format international WhatsApp (225XXXXXXXX) */
 function formatNumero(tel) {
   let n = (tel || '').replace(/\D/g, '');
   if (!n.startsWith('225')) n = '225' + n.replace(/^0+/, '');
   return n;
 }
 
-/**
- * Formate une date ISO (YYYY-MM-DD) en format lisible (ex: "05 Sept. 2026")
- */
+/** Formate une date ISO (YYYY-MM-DD) en format lisible */
 function formatDate(iso) {
   if (!iso) return '—';
   const mois = ['Jan.','Fév.','Mars','Avr.','Mai','Juin','Juil.','Août','Sept.','Oct.','Nov.','Déc.'];
@@ -64,136 +40,114 @@ function formatDate(iso) {
   return `${d} ${mois[parseInt(m, 10) - 1]} ${y}`;
 }
 
-/**
- * Ouvre WhatsApp avec un message pré-rempli pour le client.
- */
+/** Ouvre WhatsApp avec un message pré-rempli */
 function ouvrirWhatsapp(r, message) {
   const numero = formatNumero(r.whatsapp || r.telephone);
-  window.open(
-    'https://wa.me/' + numero + '?text=' + encodeURIComponent(message),
-    '_blank'
-  );
+  window.open('https://wa.me/' + numero + '?text=' + encodeURIComponent(message), '_blank');
 }
 
-/* ============================================================
-   ACTIONS SUR LES RÉSERVATIONS
-   ============================================================ */
+// ============================================================
+// ACTIONS — mise à jour du statut dans Firestore
+// ============================================================
 
 /**
- * Accepte une réservation et envoie un message WhatsApp au client.
- * @param {string} id
+ * Accepte une réservation.
+ * @param {string} firestoreId  — l'ID du document Firestore (pas r.id)
+ * @param {object} r            — les données de la réservation
  */
-function accepter(id) {
-  const reservations = getReservations();
-  const r = reservations.find(x => x.id === id);
-  if (!r) return;
+window.accepter = async function (firestoreId, r) {
+  try {
+    await updateDoc(doc(db, "reservations", firestoreId), { statut: 'accepté' });
 
-  r.statut = 'accepté';
-  saveReservations(reservations);
-
-  ouvrirWhatsapp(
-    r,
-    `Bonjour ${r.nom} 🌟\n\nVotre réservation chez Lima's Hair a été confirmée !\n\n` +
-    `💇‍♀️ Prestation : ${r.service}\n` +
-    `📅 Date : ${formatDate(r.date)}\n` +
-    `⏰ Heure : ${r.heure}\n\n` +
-    `📍 I 222, Abidjan — Pâtisserie Les Merveilles de Mai\n\n` +
-    `À très bientôt ! ✨`
-  );
-
-  afficher();
-}
+    ouvrirWhatsapp(
+      r,
+      `Bonjour ${r.nom} 🌟\n\nVotre réservation chez Lima's Hair a été confirmée !\n\n` +
+      `💇‍♀️ Prestation : ${r.service}\n` +
+      `📅 Date : ${formatDate(r.date)}\n` +
+      `⏰ Heure : ${r.heure}\n\n` +
+      `📍 I 222, Abidjan — Pâtisserie Les Merveilles de Mai\n\n` +
+      `À très bientôt ! ✨`
+    );
+  } catch (err) {
+    console.error("Erreur lors de l'acceptation :", err);
+    alert("Impossible de mettre à jour la réservation. Vérifiez votre connexion.");
+  }
+};
 
 /**
- * Refuse une réservation et envoie un message WhatsApp au client.
- * @param {string} id
+ * Refuse une réservation.
+ * @param {string} firestoreId
+ * @param {object} r
  */
-function refuser(id) {
-  const reservations = getReservations();
-  const r = reservations.find(x => x.id === id);
-  if (!r) return;
+window.refuser = async function (firestoreId, r) {
+  try {
+    await updateDoc(doc(db, "reservations", firestoreId), { statut: 'refusé' });
 
-  r.statut = 'refusé';
-  saveReservations(reservations);
+    ouvrirWhatsapp(
+      r,
+      `Bonjour ${r.nom},\n\nNous sommes désolés, votre réservation pour "${r.service}" ` +
+      `du ${formatDate(r.date)} à ${r.heure} ne peut malheureusement pas être maintenue.\n\n` +
+      `N'hésitez pas à choisir une autre date sur notre site. À bientôt ! 🌿`
+    );
+  } catch (err) {
+    console.error("Erreur lors du refus :", err);
+    alert("Impossible de mettre à jour la réservation. Vérifiez votre connexion.");
+  }
+};
 
-  ouvrirWhatsapp(
-    r,
-    `Bonjour ${r.nom},\n\nNous sommes désolés, votre réservation pour "${r.service}" ` +
-    `du ${formatDate(r.date)} à ${r.heure} ne peut malheureusement pas être maintenue.\n\n` +
-    `N'hésitez pas à choisir une autre date sur notre site. À bientôt ! 🌿`
-  );
-
-  afficher();
-}
-
-/* ============================================================
-   MISE À JOUR DES COMPTEURS
-   ============================================================ */
-
-/**
- * Met à jour tous les badges de comptage (header + filtres).
- */
+// ============================================================
+// COMPTEURS
+// ============================================================
 function mettreAJourCompteurs(reservations) {
   const total    = reservations.length;
   const attente  = reservations.filter(r => r.statut === 'en attente').length;
   const acceptes = reservations.filter(r => r.statut === 'accepté').length;
   const refuses  = reservations.filter(r => r.statut === 'refusé').length;
 
-  /* Header */
   document.getElementById('count-pending').textContent  = attente;
   document.getElementById('count-accepted').textContent = acceptes;
   document.getElementById('count-refused').textContent  = refuses;
 
-  /* Filtres */
   document.getElementById('fc-all').textContent      = total;
   document.getElementById('fc-pending').textContent  = attente;
   document.getElementById('fc-accepted').textContent = acceptes;
   document.getElementById('fc-refused').textContent  = refuses;
 }
 
-/* ============================================================
-   AFFICHAGE DES CARTES
-   ============================================================ */
-
-/**
- * Construit et injecte les cartes de réservation dans le DOM,
- * en tenant compte du filtre actif. Trie du plus récent au plus ancien.
- */
-function afficher() {
-  let reservations = getReservations().sort(
+// ============================================================
+// AFFICHAGE DES CARTES
+// ============================================================
+function afficher(reservations) {
+  /* Tri du plus récent au plus ancien */
+  let liste = [...reservations].sort(
     (a, b) => new Date(b.dateCreation) - new Date(a.dateCreation)
   );
 
-  /* Mise à jour des compteurs avec la liste complète */
-  mettreAJourCompteurs(reservations);
+  mettreAJourCompteurs(liste);
 
   /* Application du filtre */
   if (filtreActif !== 'all') {
-    reservations = reservations.filter(r => r.statut === filtreActif);
+    liste = liste.filter(r => r.statut === filtreActif);
   }
 
-  const liste = document.getElementById('liste');
-  const vide  = document.getElementById('vide');
-  liste.innerHTML = '';
+  const conteneur = document.getElementById('liste');
+  const vide      = document.getElementById('vide');
+  conteneur.innerHTML = '';
 
-  /* Aucune réservation à afficher */
-  if (reservations.length === 0) {
+  if (liste.length === 0) {
     vide.style.display = 'block';
     return;
   }
   vide.style.display = 'none';
 
-  /* Génération d'une carte par réservation */
-  reservations.forEach(r => {
+  liste.forEach(({ firestoreId, ...r }) => {
     const carte = document.createElement('div');
 
-    /* Classe CSS selon statut */
     const classeStatut = r.statut === 'accepté' ? 'accepte'
                        : r.statut === 'refusé'  ? 'refuse'
                        : '';
     carte.className = `carte ${classeStatut}`;
 
-    /* Badge de statut */
     let badgeClass, badgeIcone, badgeTexte;
     if (r.statut === 'accepté') {
       badgeClass = 'badge-accepte'; badgeIcone = 'fa-check'; badgeTexte = 'Acceptée';
@@ -203,32 +157,27 @@ function afficher() {
       badgeClass = 'badge-attente'; badgeIcone = 'fa-clock'; badgeTexte = 'En attente';
     }
 
-    /* Ligne WhatsApp optionnelle */
     const ligneWa = (r.whatsapp && r.whatsapp !== r.telephone)
       ? `<div class="info-item">
            <span class="info-label">WhatsApp</span>
            <span class="info-value">${r.whatsapp}</span>
-         </div>`
-      : '';
+         </div>` : '';
 
-    /* Ligne email optionnelle */
     const ligneEmail = r.email
       ? `<div class="info-item">
            <span class="info-label">Email</span>
            <span class="info-value">${r.email}</span>
-         </div>`
-      : '';
+         </div>` : '';
 
-    /* Commentaire optionnel */
     const commentaire = r.commentaire
-      ? `<div class="carte-commentaire">${r.commentaire}</div>`
-      : '';
+      ? `<div class="carte-commentaire">${r.commentaire}</div>` : '';
 
-    /* Boutons : désactivés si déjà traité */
     const desactive = r.statut !== 'en attente' ? 'disabled' : '';
 
+    /* On sérialise r pour pouvoir le passer au onclick inline */
+    const rJson = encodeURIComponent(JSON.stringify({ firestoreId, ...r }));
+
     carte.innerHTML = `
-      <!-- En-tête : service + badge statut -->
       <div class="carte-header">
         <h2 class="carte-titre">${r.service}</h2>
         <span class="badge-statut ${badgeClass}">
@@ -236,7 +185,6 @@ function afficher() {
         </span>
       </div>
 
-      <!-- Grille d'informations -->
       <div class="carte-infos">
         <div class="info-item">
           <span class="info-label">Date</span>
@@ -258,53 +206,46 @@ function afficher() {
         ${ligneEmail}
       </div>
 
-      <!-- Commentaire éventuel -->
       ${commentaire}
 
-      <!-- Boutons d'action -->
       <div class="carte-actions">
-        <button class="btn-action btn-accepter" ${desactive} onclick="accepter('${r.id}')">
+        <button class="btn-action btn-accepter" ${desactive}
+          onclick='accepter("${firestoreId}", JSON.parse(decodeURIComponent("${rJson}")))'>
           <i class="fa-solid fa-check"></i> Accepter
         </button>
-        <button class="btn-action btn-refuser" ${desactive} onclick="refuser('${r.id}')">
+        <button class="btn-action btn-refuser" ${desactive}
+          onclick='refuser("${firestoreId}", JSON.parse(decodeURIComponent("${rJson}")))'>
           <i class="fa-solid fa-xmark"></i> Refuser
         </button>
       </div>
     `;
 
-    liste.appendChild(carte);
+    conteneur.appendChild(carte);
   });
 }
 
-/* ============================================================
-   FILTRES
-   ============================================================ */
-
-/**
- * Branche les boutons de filtre.
- * Un clic change le filtre actif et rafraîchit l'affichage.
- */
-function initFiltres() {
-  document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      filtreActif = btn.dataset.filter;
-      afficher();
-    });
+// ============================================================
+// FILTRES
+// ============================================================
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    filtreActif = btn.dataset.filter;
+    afficher(derniereListeConnue);
   });
-}
-
-/* ============================================================
-   ÉCOUTE DES CHANGEMENTS localStorage
-   (utile si une autre fenêtre du même navigateur envoie des données)
-   ============================================================ */
-window.addEventListener('storage', (e) => {
-  if (e.key === CLE) afficher();
 });
 
-/* ============================================================
-   INITIALISATION
-   ============================================================ */
-initFiltres();
-afficher();
+// ============================================================
+// ÉCOUTE FIRESTORE EN TEMPS RÉEL (remplace localStorage)
+// Un seul listener — met à jour l'affichage à chaque changement
+// ============================================================
+let derniereListeConnue = [];
+
+onSnapshot(collection(db, "reservations"), (snapshot) => {
+  derniereListeConnue = snapshot.docs.map(docSnap => ({
+    firestoreId: docSnap.id,
+    ...docSnap.data()
+  }));
+  afficher(derniereListeConnue);
+});

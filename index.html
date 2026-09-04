@@ -5,15 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin — Lima's Hair</title>
 
-  <!-- Google Fonts : mêmes polices que le site principal -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-
-  <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-  <!-- Feuille de styles admin -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -25,7 +20,6 @@
         <span class="header-logo">Lima's Hair</span>
         <span class="header-badge">Administration</span>
       </div>
-      <!-- Compteurs de statut -->
       <div class="header-stats">
         <div class="stat-pill stat-pending">
           <i class="fa-solid fa-clock"></i>
@@ -46,13 +40,12 @@
   <!-- ==================== CONTENU PRINCIPAL ==================== -->
   <main class="admin-main">
 
-    <!-- Sous-titre explicatif -->
     <p class="admin-subtitle">
       <i class="fa-brands fa-whatsapp"></i>
       Accepter ou refuser une réservation envoie automatiquement un message WhatsApp au client.
     </p>
 
-    <!-- ── Barre de filtres ── -->
+    <!-- Barre de filtres -->
     <div class="filter-bar">
       <button class="filter-btn active" data-filter="all">
         Toutes <span class="filter-count" id="fc-all">0</span>
@@ -68,20 +61,20 @@
       </button>
     </div>
 
-    <!-- ── Liste des réservations (injectée par JS) ── -->
+    <!-- Liste des réservations -->
     <div id="liste"></div>
 
-    <!-- ── Message "aucune réservation" ── -->
+    <!-- État vide -->
     <div id="vide" class="empty-state" style="display:none;">
       <i class="fa-regular fa-calendar-xmark"></i>
       <p>Aucune réservation pour le moment.</p>
-      <span>Les nouvelles réservations faites sur le site apparaîtront ici automatiquement dès que le client enverra la confirmation WhatsApp.</span>
+      <span>Les nouvelles réservations apparaîtront ici automatiquement dès qu'un client en fera une sur le site.</span>
     </div>
 
   </main>
 
-  <!-- ── Script admin ── -->
-  <script src="script.js"></script>
+  <!-- ── Script admin en module ES (requis pour Firebase) ── -->
+  <script type="module" src="script.js"></script>
 
 </body>
 </html>
